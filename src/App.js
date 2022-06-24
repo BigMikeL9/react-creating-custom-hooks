@@ -1,24 +1,56 @@
-import logo from './logo.svg';
-import './App.css';
+import React, { useEffect, useState, useCallback } from "react";
+
+import Tasks from "./components/Tasks/Tasks";
+import NewTask from "./components/NewTask/NewTask";
+import useHttp from "./hooks/useHttp";
 
 function App() {
+  // const [isLoading, setIsLoading] = useState(false);
+  // const [error, setError] = useState(null);
+  const [tasks, setTasks] = useState([]);
+
+  // -------------------------------------------------------------------
+  //  -- using Custom Hook --
+  const { isLoading, error, sendRequest: fetchTasks } = useHttp();
+
+  useEffect(() => {
+    const request_Config = {
+      url: "https://react-custom-http-hook-e2fcb-default-rtdb.firebaseio.com/tasks.json",
+    };
+
+    const transformedData = (data) => {
+      const loadedTasks = Object.entries(data);
+
+      const fetchedTasks = loadedTasks.map((task) => {
+        const [key, value] = task;
+
+        return {
+          id: key,
+          text: value,
+        };
+      });
+
+      setTasks(fetchedTasks);
+    };
+
+    fetchTasks("", request_Config, transformedData);
+  }, [fetchTasks]);
+  // -------------------------------------------------------------------
+
+  const taskAddHandler = useCallback((task) => {
+    setTasks((prevTasks) => prevTasks.concat(task));
+  }, []);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <React.Fragment>
+      <NewTask onAddTask={taskAddHandler} />
+      <Tasks
+        items={tasks}
+        loading={isLoading}
+        error={error}
+        onFetch={fetchTasks}
+      />
+    </React.Fragment>
   );
 }
 
